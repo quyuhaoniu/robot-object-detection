@@ -1,0 +1,531 @@
+% !TeX program = xelatex
+% =====================================================================
+%  实验报告模板 —— 实验一：目标检测与识别（学术蓝·精致版）
+%  编译: XeLaTeX（Overleaf: 左上 Menu → Compiler → XeLaTeX → Recompile）
+%  用法: 修改下方「个人信息」，再填各节占位内容。
+% =====================================================================
+
+\documentclass[zihao=-4, a4paper]{ctexart}
+
+% ============================ 个人信息（改成你自己的） ================
+\newcommand{\university}{XX 大学}
+\newcommand{\college}{XX 学院}
+\newcommand{\studentname}{你的姓名}
+\newcommand{\studentid}{你的学号}
+\newcommand{\studentclass}{你的班级}
+\newcommand{\teacher}{指导教师姓名}
+\newcommand{\expdate}{\today}
+
+% ============================ 宏包 ====================================
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.8cm, right=2.8cm]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{array}
+\usepackage{listings}
+\usepackage[table]{xcolor}      % table 选项用于表格隔行着色
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{hyperref}
+
+% ============================ 颜色主题（可自定义） ======================
+\definecolor{primary}{HTML}{1F4E79}   % 主色：深蓝
+\definecolor{navy}{HTML}{123A5C}       % 更深蓝
+\definecolor{accent}{HTML}{2E86AB}     % 强调：青蓝
+\definecolor{lightbg}{HTML}{EAF1F8}    % 浅底
+\definecolor{midbg}{HTML}{D5E3F0}      % 中底
+\definecolor{codegreen}{HTML}{1A7A3D}
+\definecolor{codegray}{HTML}{666666}
+\definecolor{codepurple}{HTML}{7B2FBE}
+\definecolor{codebg}{HTML}{F5F7FA}
+
+% ============================ 章节标题样式 =============================
+% 一级标题：深蓝色 + 下方青蓝横线
+\titleformat{\section}
+    {\Large\bfseries\color{primary}}
+    {\thesection}
+    {1em}
+    {}
+    [{\color{accent}\hrule height 1.2pt}]
+% 二级标题：青蓝色
+\titleformat{\subsection}
+    {\large\bfseries\color{accent}}
+    {\thesubsection}
+    {0.8em}
+    {}
+\titlespacing*{\section}{0pt}{1.8\baselineskip}{1em}
+\titlespacing*{\subsection}{0pt}{1.4\baselineskip}{0.4em}
+
+% ============================ 代码样式 =================================
+\lstset{
+    basicstyle=\ttfamily\small,
+    backgroundcolor=\color{codebg},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{primary}\bfseries,
+    stringstyle=\color{codepurple},
+    numbers=left,
+    numberstyle=\tiny\color{codegray},
+    frame=single,
+    rulecolor=\color{midbg},
+    breaklines=true,
+    captionpos=b,
+    tabsize=4,
+    showstringspaces=false,
+}
+
+% ============================ 页眉页脚 =================================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{primary}\bfseries 目标检测与识别实验报告}
+\fancyhead[R]{\small\color{codegray}\studentname}
+\fancyfoot[C]{\small\color{codegray}第 \thepage\ 页}
+\renewcommand{\headrulewidth}{0.8pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{accent}\leaders\hrule height \headrulewidth\hfill}}
+
+% ============================ 超链接 ===================================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=accent,
+    urlcolor=accent,
+    citecolor=accent,
+    pdftitle={目标检测与识别实验报告},
+    pdfauthor={\studentname},
+}
+
+% ============================ 表格小工具 ===============================
+% 表头白字（配合 \rowcolor{primary} 的蓝色表头使用）
+\newcommand{\tabhead}[1]{\textbf{\color{white}#1}}
+
+% ============================ 自定义环境 ===============================
+% 提示盒子
+\newtcolorbox{notebox}[1][]{colback=lightbg, colframe=accent, fonttitle=\bfseries, title=#1}
+% 结论盒子
+\newtcolorbox{resultbox}[1][]{colback=lightbg, colframe=primary, fonttitle=\bfseries, title=#1}
+
+% ============================ 图片降级 =================================
+% 图片不存在时显示占位框，不报错（有图后上传同名文件即自动替换）
+\newcommand{\img}[2][]{%
+    \IfFileExists{#2}%
+        {\includegraphics[#1]{#2}}%
+        {\fbox{\parbox{0.6\linewidth}{\centering\small（图片缺失：#2）}}}%
+}
+
+% ============================ 正文 =====================================
+\begin{document}
+
+% ============================ 封面 =====================================
+\begin{titlepage}
+    \vspace{3cm}
+
+    \centering
+    {\color{accent}\rule{\linewidth}{1.5pt}}\\[0.8cm]
+    {\Huge\bfseries\color{navy} 实验报告}\\[0.5cm]
+    {\LARGE\bfseries\color{accent} 实验一：目标检测与识别}\\[0.8cm]
+    {\color{accent}\rule{\linewidth}{1.5pt}}
+
+    \vspace{2cm}
+
+    {\large\color{primary} 基于 YOLOv8 + ROS2 + Jetson 的桌面物体检测}
+
+    \vspace{3cm}
+
+    \renewcommand{\arraystretch}{1.9}
+    \begin{tabular}{>{\bfseries\color{primary}}r c}
+        \hline
+        姓\hspace{2em}名 & \studentname \\
+        \hline
+        学\hspace{2em}号 & \studentid \\
+        \hline
+        班\hspace{2em}级 & \studentclass \\
+        \hline
+        指导教师 & \teacher \\
+        \hline
+        实验日期 & \expdate \\
+        \hline
+    \end{tabular}
+
+    \vfill
+    {\color{accent}\rule{\linewidth}{1pt}}
+\end{titlepage}
+
+% ============================ 目录 =====================================
+\tableofcontents
+\newpage
+
+% ============================ 一、实验目的 =============================
+\section{实验目的}
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item 掌握目标检测（Object Detection）的基本原理与典型算法（YOLO 系列）；
+    \item 独立完成桌面物体数据集的采集、标注与模型训练；
+    \item 掌握在 Jetson 边缘设备上部署并实时运行检测模型的方法；
+    \item 学会通过 ROS2 发布检测结果，实现检测模块与机器人系统的集成。
+\end{enumerate}
+
+% ============================ 二、实验任务 =============================
+\section{实验任务}
+\begin{notebox}[实验任务]
+    \begin{enumerate}[label=\arabic*., leftmargin=2em]
+        \item 选择不少于 2 类桌面物体；
+        \item 自行采集、标注数据并训练目标检测模型；
+        \item 在 Jetson 上运行识别程序；
+        \item 实时显示目标类别、检测框和置信度；
+        \item 通过 ROS2 发布识别结果。
+    \end{enumerate}
+\end{notebox}
+
+% ============================ 三、实验环境 =============================
+\section{实验环境}
+\begin{table}[H]
+    \centering
+    \rowcolors{2}{lightbg}{white}
+    \begin{tabular}{@{}lll@{}}
+        \hline
+        \rowcolor{primary}
+        \tabhead{类别} & \tabhead{项目} & \tabhead{配置} \\
+        \hline
+        硬件 & 部署平台 & NVIDIA Jetson Orin NX \\
+             & 摄像头 & USB 摄像头 \\
+        训练环境 & CPU/GPU & Windows 主机（CPU 训练） \\
+        软件 & 检测框架 & Ultralytics YOLOv8 \\
+             & 深度学习框架 & PyTorch \\
+             & 机器人中间件 & ROS2（Humble） \\
+             & 部署加速 & TensorRT / ONNX \\
+             & 语言 & Python 3 \\
+        \hline
+    \end{tabular}
+    \caption{软硬件环境}
+\end{table}
+
+% ============================ 四、实验原理 =============================
+\section{实验原理}
+\subsection{YOLOv8 目标检测}
+YOLOv8 采用单阶段（one-stage）检测范式，将目标定位与分类统一为回归问题。
+其网络结构由 Backbone（主干网络）、Neck（特征融合）、Head（检测头）三部分组成，
+在输入图像上一次性预测出边界框与类别置信度。相较于两阶段算法，YOLOv8 在速度上
+具有显著优势，适合在 Jetson 等算力受限的边缘设备上部署。
+
+\subsection{评价指标}
+\begin{itemize}[leftmargin=2em]
+    \item \textbf{IoU（交并比）}：预测框与真值框的交集面积与并集面积之比，衡量定位精度；
+    \item \textbf{mAP（平均精度均值）}：所有类别 AP 的平均值，是目标检测的核心指标；
+    \item \textbf{正确识别率}：正确检出物体数占测试物体总数的比例，本实验验收要求 $\geq 80\%$。
+\end{itemize}
+
+% ============================ 五、实验步骤 =============================
+\section{实验步骤}
+
+\subsection{数据集采集与标注}
+选择 2 类桌面物体：\texttt{keyboard}（键盘）、\texttt{laptop}（笔记本）。
+数据来源分两部分：训练集与验证集使用互联网公开图片，测试集全部由自己用摄像头拍摄，
+保证测试集与训练集不重复（避免数据泄漏）。采集后用 LabelMe 标注，划分为训练、验证、测试：
+
+\begin{table}[H]
+    \centering
+    \rowcolors{2}{lightbg}{white}
+    \begin{tabular}{@{}lccc@{}}
+        \hline
+        \rowcolor{primary}
+        \tabhead{数据集} & \tabhead{数量} & \tabhead{来源} & \tabhead{用途} \\
+        \hline
+        训练集 train & 410 张 & 互联网 298 张 + 自拍 112 张 & 模型训练 \\
+        验证集 val   & 31 张  & 互联网 & 调参验证 \\
+        测试集 test  & 23 个物体（17 张图） & 全部自拍 & 最终评测 \\
+        \hline
+    \end{tabular}
+    \caption{数据集划分}
+\end{table}
+
+标注格式为 YOLO 格式（每行一个物体：类别编号 + 归一化中心坐标与宽高）。
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{labels.jpg}
+        \caption{标注数量分布}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{train_batch0.jpg}
+        \caption{训练样本示例}
+    \end{subfigure}
+    \caption{数据集标注与样本}
+\end{figure}
+
+\subsection{模型训练}
+\begin{lstlisting}[language=bash, caption={训练命令}]
+python train.py --epochs 60 --imgsz 480 --batch 32
+\end{lstlisting}
+
+训练参数与结果记录于下表：
+
+\begin{table}[H]
+    \centering
+    \rowcolors{2}{lightbg}{white}
+    \begin{tabular}{@{}ll@{}}
+        \hline
+        \rowcolor{primary}
+        \tabhead{参数} & \tabhead{取值} \\
+        \hline
+        预训练权重 & yolov8n.pt \\
+        训练轮数 epochs & 60 \\
+        输入尺寸 imgsz & 480 \\
+        批量大小 batch & 32 \\
+        初始学习率 lr0 & 0.01 \\
+        优化器 & AdamW（auto） \\
+        \hline
+    \end{tabular}
+    \caption{训练参数}
+\end{table}
+
+\subsection{Jetson 部署与加速}
+在 Jetson 上将 PyTorch 权重转换为 TensorRT 引擎，以获得实时推理速度：
+
+\begin{lstlisting}[language=bash, caption={导出 TensorRT}]
+yolo export model=best.pt format=engine imgsz=640
+\end{lstlisting}
+
+\subsection{ROS2 发布}
+编写 ROS2 节点，将检测结果以标准消息 \texttt{vision\_msgs/Detection2DArray} 发布：
+
+\begin{lstlisting}[language=bash, caption={运行 ROS2 节点}]
+source /opt/ros/humble/setup.bash
+python3 ros2_detect.py
+ros2 topic echo /detections
+\end{lstlisting}
+
+% ============================ 六、实验结果 =============================
+\section{实验结果}
+
+\subsection{训练结果}
+\begin{figure}[H]
+    \centering
+    \img[width=0.8\linewidth]{results.png}
+    \caption{训练损失与 mAP 曲线}
+\end{figure}
+
+最终验证集指标：\texttt{mAP50 = 0.920，mAP50-95 = 0.734}（第 60 轮，精度 0.946 / 召回 0.828）。
+
+\begin{figure}[H]
+    \centering
+    \img[width=0.62\linewidth]{confusion_matrix_normalized.png}
+    \caption{混淆矩阵（归一化）}
+\end{figure}
+
+\subsection{测试结果与正确识别率}
+\begin{table}[H]
+    \centering
+    \rowcolors{2}{lightbg}{white}
+    \begin{tabular}{@{}lcccc@{}}
+        \hline
+        \rowcolor{primary}
+        \tabhead{类别} & \tabhead{正确} & \tabhead{总数} & \tabhead{漏检} & \tabhead{正确率} \\
+        \hline
+        keyboard & 6  & 8  & 2 & 75.0\% \\
+        laptop   & 14 & 15 & 1 & 93.3\% \\
+        \hline
+        \rowcolor{midbg}
+        合计     & 20 & 23 & 3 & 87.0\% \\
+        \hline
+    \end{tabular}
+    \caption{测试集识别结果（识别率 87.0\%，达标 $\geq 80\%$）}
+\end{table}
+
+测试集为自行拍摄的 17 张照片，共 23 个物体（键盘 8 个、笔记本 15 个），其中 20 个被正确检出。下图为部分正确检出的测试样本（图中绿框为键盘、橙框为笔记本）：
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.32\linewidth}
+        \img[width=\linewidth]{test1.jpg}
+        \caption{键盘 + 笔记本}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\linewidth}
+        \img[width=\linewidth]{test2.jpg}
+        \caption{键盘 + 笔记本}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\linewidth}
+        \img[width=\linewidth]{test3.jpg}
+        \caption{键盘 + 笔记本}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{0.32\linewidth}
+        \img[width=\linewidth]{test4.jpg}
+        \caption{笔记本}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\linewidth}
+        \img[width=\linewidth]{test5.jpg}
+        \caption{笔记本}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\linewidth}
+        \img[width=\linewidth]{test6.jpg}
+        \caption{笔记本}
+    \end{subfigure}
+    \caption{测试集检测结果示例（均正确检出）}
+\end{figure}
+
+\subsection{实时检测效果}
+在 PC（或 Jetson）上运行 \texttt{detect.py}，摄像头实时画面中会实时叠加类别标签、检测框、置信度与 FPS 信息，部分检测画面如下：
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{realtime1.png}
+        \caption{实时检测 1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{realtime2.png}
+        \caption{实时检测 2}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{realtime3.png}
+        \caption{实时检测 3}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{realtime4.png}
+        \caption{实时检测 4}
+    \end{subfigure}
+    \caption{实时检测画面（含类别、检测框、置信度与 FPS）}
+\end{figure}
+
+\subsection{错误案例分析}
+\begin{notebox}[错误案例]
+    本次测试共 23 个物体，正确 20 个、漏检 3 个、误检 3 个，共 4 张错误图片（下图）。
+    漏检主要出现在：物体拍摄角度极端（键盘侧面正对镜头、只露出窄窄一条）、
+    笔记本大特写超出训练分布、物体距离过近/过远导致尺度与训练样本差异大；
+    误检则多为桌面阴影/纹理被误判，或同一物体被重复框出。
+    根本原因是训练集中缺少这些极端视角与尺度下的样本，后续可通过扩充对应视角数据来改善。
+\end{notebox}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{error1.jpg}
+        \caption{键盘漏检 + 误检}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{error2.jpg}
+        \caption{键盘漏检 + 误检}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{error3.jpg}
+        \caption{笔记本漏检}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{error4.jpg}
+        \caption{笔记本检出 + 误检}
+    \end{subfigure}
+    \caption{错误案例（绿框=真值，红框=预测）}
+\end{figure}
+
+% ============================ 七、验收标准对照 =========================
+\section{验收标准对照}
+\begin{table}[H]
+    \centering
+    \rowcolors{2}{lightbg}{white}
+    \begin{tabular}{@{}p{6.2cm}p{3.2cm}p{3.2cm}@{}}
+        \hline
+        \rowcolor{primary}
+        \tabhead{验收要求} & \tabhead{实测结果} & \tabhead{是否达标} \\
+        \hline
+        能同时识别 $\geq 2$ 类物体 & 2 类（keyboard/laptop） & 是 \\
+        测试 20 物体识别率 $\geq 80\%$ & 87.0\%（20/23） & 是 \\
+        Jetson 实时检测 $\geq 5$ FPS & （Jetson 实测后填写） & 待测 \\
+        能保存测试结果和错误案例 & runs/test/ & 是 \\
+        通过 ROS2 发布识别结果 & /detections & 是 \\
+        \hline
+    \end{tabular}
+    \caption{验收要求与达成情况}
+\end{table}
+
+% ============================ 八、代码说明 =============================
+\section{代码说明}
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \texttt{train.py}：训练脚本；
+    \item \texttt{detector.py}：共享检测器，自动选择 TensorRT/ONNX/PyTorch 后端；
+    \item \texttt{detect.py}：实时检测（显示类别、框、置信度、FPS）；
+    \item \texttt{test.py}：测试评估（正确识别率 + 错误案例）；
+    \item \texttt{ros2\_detect.py}：ROS2 节点（发布 Detection2DArray）。
+\end{enumerate}
+
+关键代码示例（推理核心）：
+\begin{lstlisting}[language=Python, caption={检测推理}]
+from ultralytics import YOLO
+
+model = YOLO("best.engine")   # TensorRT 引擎
+results = model(frame, conf=0.25, verbose=False)
+for box in results[0].boxes:
+    cls = int(box.cls[0])
+    conf = float(box.conf[0])
+    xyxy = box.xyxy[0].tolist()
+    print(model.names[cls], conf, xyxy)
+\end{lstlisting}
+
+% ============================ 九、运行说明 =============================
+\section{运行说明}
+\begin{lstlisting}[language=bash, caption={完整运行流程}]
+# 1. 安装依赖
+pip install -r requirements.txt
+
+# 2. 训练
+python train.py
+
+# 3. Jetson 上导出 TensorRT
+yolo export model=best.pt format=engine imgsz=640
+
+# 4. 实时检测
+python detect.py
+
+# 5. ROS2 发布
+source /opt/ros/humble/setup.bash
+python3 ros2_detect.py
+
+# 6. 测试评估
+python test.py
+\end{lstlisting}
+
+% ============================ 十、实验总结 =============================
+\section{实验总结}
+\begin{resultbox}[实验总结]
+    本实验完成了桌面物体目标检测任务：选定 keyboard（键盘）与 laptop（笔记本）两类物体，
+    自行采集并标注数据集（训练 410 张、验证 31 张、测试 23 个物体），
+    基于 YOLOv8n 训练出检测模型，验证集 mAP50 达 0.920。
+    测试集识别率 87.0\%（20/23），满足 $\geq 80\%$ 的验收要求。
+    同时编写了 ROS2 节点，将检测结果以 vision\_msgs/Detection2DArray 发布，
+    并适配了不同版本 vision\_msgs 中 BoundingBox2D.center 类型的差异。
+    主要不足：少数极端视角（键盘侧对镜头、笔记本大特写）出现漏检，
+    反映训练数据在视角与尺度覆盖上仍有欠缺，后续可通过扩充对应样本进一步提升。
+\end{resultbox}
+
+% ============================ 附录 =====================================
+\section{附录：GitHub 提交记录}
+\begin{itemize}[leftmargin=2em]
+    \item 项目仓库链接：\url{https://github.com/你的用户名/robot-object-detection}
+    \item 提交记录截图如下（要求：分步提交，禁止单次全量提交）：
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \img[width=0.9\linewidth]{commit_history.png}
+    \caption{Git commit 记录截图（请替换为你的截图）}
+\end{figure}
+
+\end{document}

@@ -1,0 +1,514 @@
+% !TeX program = xelatex
+% =====================================================================
+%  Experiment 1: Object Detection and Recognition — Lab Report (English)
+%  Clean single-column academic style. Compile with XeLaTeX.
+% =====================================================================
+
+\documentclass[12pt, a4paper]{article}
+
+% ============================ Personal info (edit) ====================
+\newcommand{\studentname}{Your Name}
+\newcommand{\studentid}{Your Student ID}
+\newcommand{\studentclass}{\begin{tabular}[t]{@{}l@{}}Class 2, Grade 2024 \\ Computer Science and Technology (Sino-Foreign Cooperative Education)\end{tabular}}
+\newcommand{\teacher}{Zhou Xiaowei}
+\newcommand{\expdate}{\today}
+
+% ============================ Packages ================================
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.8cm, right=2.8cm]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Termes}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{setspace}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+% ============================ Captions ================================
+\captionsetup{font=small, labelfont=bf}
+
+% ============================ Line spacing ============================
+\setstretch{1.15}
+
+% ============================ Code listings ===========================
+\lstset{
+    basicstyle=\ttfamily\small,
+    backgroundcolor=\color{gray!12},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    frame=single,
+    rulecolor=\color{gray},
+    breaklines=true,
+    captionpos=b,
+    tabsize=4,
+    showstringspaces=false,
+}
+
+% ============================ Header / footer =========================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Object Detection and Recognition Lab Report}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ============================ Hyperlinks ==============================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=blue,
+    citecolor=black,
+    pdftitle={Object Detection and Recognition Lab Report},
+    pdfauthor={\studentname},
+}
+
+% ============================ Image fallback ==========================
+\newcommand{\img}[2][]{%
+    \IfFileExists{#2}%
+        {\includegraphics[#1]{#2}}%
+        {\fbox{\parbox{0.6\linewidth}{\centering\small(Image missing: #2)}}}%
+}
+
+% ============================ Body ====================================
+\begin{document}
+
+% ============================ Cover ===================================
+\begin{titlepage}
+    \thispagestyle{empty}
+    \vspace*{1.2cm}
+    \begin{center}
+        {\Large\bfseries Experiment Report}\\[1cm]
+        {\LARGE\bfseries Experiment 1: Object Detection and Recognition}\\[0.5cm]
+        {\large Desktop Object Detection with YOLOv8 + ROS2 + Jetson}\\[2.2cm]
+
+        \renewcommand{\arraystretch}{1.6}
+        \begin{tabular}{rl}
+            \textbf{Name:} & \studentname \\[0.3em]
+            \textbf{Student ID:} & \studentid \\[0.3em]
+            \textbf{Class:} & \studentclass \\[0.3em]
+            \textbf{Instructor:} & \teacher \\[0.3em]
+            \textbf{Date:} & \expdate \\
+        \end{tabular}
+    \end{center}
+
+    \vspace{1.5cm}
+    {\large\bfseries Abstract}\\[0.6em]
+    \noindent This report describes a desktop object detection experiment based on
+    YOLOv8, deployed with ROS2 on a Jetson device. Two object classes (keyboard and
+    laptop) were selected, and a dataset was independently collected and annotated,
+    comprising 410 training images, 31 validation images, and 23 test objects. A
+    YOLOv8n model was trained to a validation mAP50 of 0.920, and the final test
+    accuracy was 87.0\%, satisfying the $\geq 80\%$ acceptance requirement. A ROS2
+    node was implemented to publish detection results as
+    \texttt{vision\_msgs/Detection2DArray} messages.
+
+    \vspace{1em}
+    \noindent\textbf{Keywords:} object detection; YOLOv8; ROS2; Jetson; TensorRT
+
+    \vfill
+\end{titlepage}
+
+% ============================ TOC =====================================
+\tableofcontents
+\newpage
+
+% ============================ 1. Objectives ===========================
+\section{Experiment Objectives}
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item Master the basic principles of object detection and representative algorithms (the YOLO family);
+    \item Independently complete the collection, annotation, and model training of a desktop object dataset;
+    \item Master the method of deploying and running a detection model in real time on Jetson edge devices;
+    \item Learn to publish detection results through ROS2, integrating the detection module with a robotic system.
+\end{enumerate}
+
+% ============================ 2. Tasks ================================
+\section{Experiment Tasks}
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item Select at least 2 classes of desktop objects;
+    \item Collect and annotate data independently, and train an object detection model;
+    \item Run the recognition program on the Jetson;
+    \item Display the object class, bounding box, and confidence in real time;
+    \item Publish the recognition results via ROS2.
+\end{enumerate}
+
+% ============================ 3. Environment ==========================
+\section{Experiment Environment}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{@{}lll@{}}
+        \toprule
+        \textbf{Category} & \textbf{Item} & \textbf{Configuration} \\
+        \midrule
+        Hardware & Deployment platform & NVIDIA Jetson Orin NX \\
+                 & Camera & USB camera \\
+        Training & CPU/GPU & Windows host (CPU training) \\
+        Software & Detection framework & Ultralytics YOLOv8 \\
+                 & Deep learning framework & PyTorch \\
+                 & Robot middleware & ROS2 (Humble) \\
+                 & Deployment acceleration & TensorRT / ONNX \\
+                 & Language & Python 3 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Software and hardware environment}
+\end{table}
+
+% ============================ 4. Principles ===========================
+\section{Experiment Principles}
+\subsection{YOLOv8 Object Detection}
+YOLOv8 adopts a one-stage detection paradigm, unifying object localization and
+classification into a single regression problem. Its network consists of three parts:
+Backbone, Neck, and Head, which jointly predict bounding boxes and class confidences
+in a single pass over the input image. Compared with two-stage algorithms, YOLOv8
+has a significant speed advantage, making it well suited for deployment on
+computationally constrained edge devices such as the Jetson.
+
+\subsection{Evaluation Metrics}
+\begin{itemize}[leftmargin=2em]
+    \item \textbf{IoU (Intersection over Union)}: the ratio of the intersection to the union of the predicted box and the ground-truth box, measuring localization quality;
+    \item \textbf{mAP (mean Average Precision)}: the average AP over all classes, the core metric of object detection;
+    \item \textbf{Accuracy}: the ratio of correctly detected objects to the total number of test objects; this experiment requires $\geq 80\%$.
+\end{itemize}
+
+% ============================ 5. Procedures ===========================
+\section{Experiment Procedures}
+
+\subsection{Dataset Collection and Annotation}
+Two classes of desktop objects were selected: \texttt{keyboard} and \texttt{laptop}.
+The data come from two sources: the training and validation sets use public internet
+images, while the test set is entirely self-shot with a camera, ensuring that the test
+set does not overlap with the training set (avoiding data leakage). After collection,
+the images were annotated with LabelMe and split into training, validation, and test sets:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        \textbf{Dataset} & \textbf{Count} & \textbf{Source} & \textbf{Purpose} \\
+        \midrule
+        train & 410 images & 298 internet + 112 self-shot & Model training \\
+        val   & 31 images  & internet & Validation \\
+        test  & 23 objects (17 images) & all self-shot & Final evaluation \\
+        \bottomrule
+    \end{tabular}
+    \caption{Dataset split}
+\end{table}
+
+The annotation follows the YOLO format (one object per line: class index + normalized
+center coordinates and width/height).
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{labels.jpg}
+        \caption{Annotation count distribution}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{train_batch0.jpg}
+        \caption{Training sample examples}
+    \end{subfigure}
+    \caption{Dataset annotation and samples}
+\end{figure}
+
+\subsection{Model Training}
+\begin{lstlisting}[language=bash, caption={Training command}]
+python train.py --epochs 60 --imgsz 480 --batch 32
+\end{lstlisting}
+
+The training parameters and results are recorded in the following table:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{@{}ll@{}}
+        \toprule
+        \textbf{Parameter} & \textbf{Value} \\
+        \midrule
+        Pretrained weights & yolov8n.pt \\
+        Epochs & 60 \\
+        Image size (imgsz) & 480 \\
+        Batch size & 32 \\
+        Initial learning rate (lr0) & 0.01 \\
+        Optimizer & AdamW (auto) \\
+        \bottomrule
+    \end{tabular}
+    \caption{Training parameters}
+\end{table}
+
+\subsection{Jetson Deployment and Acceleration}
+On the Jetson, the PyTorch weights are converted to a TensorRT engine to achieve
+real-time inference speed:
+
+\begin{lstlisting}[language=bash, caption={Export TensorRT}]
+yolo export model=best.pt format=engine imgsz=640
+\end{lstlisting}
+
+\subsection{ROS2 Publishing}
+A ROS2 node is implemented to publish detection results as standard
+\texttt{vision\_msgs/Detection2DArray} messages:
+
+\begin{lstlisting}[language=bash, caption={Run the ROS2 node}]
+source /opt/ros/humble/setup.bash
+python3 ros2_detect.py
+ros2 topic echo /detections
+\end{lstlisting}
+
+% ============================ 6. Results ==============================
+\section{Experimental Results}
+
+\subsection{Training Results}
+\begin{figure}[H]
+    \centering
+    \img[width=0.95\linewidth]{results.png}
+    \caption{Training loss and mAP curves}
+\end{figure}
+
+Final validation metrics: \texttt{mAP50 = 0.920, mAP50-95 = 0.734}
+(epoch 60, precision 0.946 / recall 0.828).
+
+The training curves show that the loss decreases rapidly in the early epochs and then
+converges, while mAP50 rises and stabilizes, indicating that the model has converged
+without obvious overfitting. Note that the precision (0.946) is higher than the recall
+(0.828), meaning the model rarely produces false positives but occasionally misses
+some objects, which is consistent with the error cases analyzed below.
+
+\begin{figure}[H]
+    \centering
+    \img[width=0.8\linewidth]{confusion_matrix_normalized.png}
+    \caption{Confusion matrix (normalized)}
+\end{figure}
+
+As shown in the normalized confusion matrix, the two classes are well separated along
+the diagonal, and the main confusion is between the objects and the background, which
+corresponds to the missed detections.
+
+\subsection{Test Results and Accuracy}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{@{}p{3.5cm}cccc@{}}
+        \toprule
+        \textbf{Class} & \textbf{Correct} & \textbf{Total} & \textbf{Missed} & \textbf{Accuracy} \\
+        \midrule
+        keyboard & 6  & 8  & 2 & 75.0\% \\
+        laptop   & 14 & 15 & 1 & 93.3\% \\
+        \midrule
+        Total    & 20 & 23 & 3 & 87.0\% \\
+        \bottomrule
+    \end{tabular}
+    \caption{Test set results (accuracy 87.0\%, meeting $\geq 80\%$)}
+\end{table}
+
+The test set consists of 17 self-shot photos with 23 objects in total (8 keyboards
+and 15 laptops), of which 20 were correctly detected, giving an overall accuracy of
+87.0\%. From the per-class results, the laptop class (93.3\%) performs noticeably
+better than the keyboard class (75.0\%): laptops are larger and have a more
+distinctive shape, whereas keyboards often appear edge-on in the test images and
+shrink into thin strips with few distinguishable features, making them harder to
+detect. The figure below shows some correctly detected test samples (green boxes =
+keyboard, orange boxes = laptop):
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.32\linewidth}
+        \img[width=\linewidth]{test1.jpg}
+        \caption{Keyboard + laptop}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\linewidth}
+        \img[width=\linewidth]{test2.jpg}
+        \caption{Keyboard + laptop}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\linewidth}
+        \img[width=\linewidth]{test3.jpg}
+        \caption{Keyboard + laptop}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{0.32\linewidth}
+        \img[width=\linewidth]{test4.jpg}
+        \caption{Laptop}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\linewidth}
+        \img[width=\linewidth]{test5.jpg}
+        \caption{Laptop}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\linewidth}
+        \img[width=\linewidth]{test6.jpg}
+        \caption{Laptop}
+    \end{subfigure}
+    \caption{Test set detection results (all correctly detected)}
+\end{figure}
+
+\subsection{Real-time Detection Results}
+Running \texttt{detect.py} on a PC (or the Jetson) overlays the class label, bounding
+box, confidence, and FPS on the live camera feed in real time. Each detected object is
+drawn with a colored bounding box (green for keyboard, orange for laptop) together with
+its class name and confidence score, and the current FPS is shown in the top-left
+corner. On the Jetson, the PyTorch weights are converted to a TensorRT engine to
+achieve real-time performance. Some real-time detection frames captured during a live
+run are shown below:
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{realtime1.png}
+        \caption{Real-time detection 1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{realtime2.png}
+        \caption{Real-time detection 2}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{realtime3.png}
+        \caption{Real-time detection 3}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{realtime4.png}
+        \caption{Real-time detection 4}
+    \end{subfigure}
+    \caption{Real-time detection frames (with class, box, confidence, and FPS)}
+\end{figure}
+
+\subsection{Error Case Analysis}
+The test contains 23 objects: 20 correct, 3 missed, and 3 false positives,
+producing 4 error images (below). The misses mainly arise from extreme viewing
+angles (a keyboard seen edge-on, showing only a thin strip), a laptop close-up
+exceeding the training distribution, and objects too near or too far such that
+their scale differs greatly from the training samples. The false positives are
+mostly desk shadows/textures being misjudged, or the same object being boxed
+twice. The root cause is that the training set lacks samples from these extreme
+viewpoints and scales, which can be improved by collecting more such data.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{error1.jpg}
+        \caption{Keyboard missed + false positive}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{error2.jpg}
+        \caption{Keyboard missed + false positive}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{error3.jpg}
+        \caption{Laptop missed}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \img[width=\linewidth]{error4.jpg}
+        \caption{Laptop detected + false positive}
+    \end{subfigure}
+    \caption{Error cases (green = ground truth, red = prediction)}
+\end{figure}
+
+% ============================ 7. Acceptance ===========================
+\section{Acceptance Criteria}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{@{}p{6.2cm}p{3.2cm}p{3.2cm}@{}}
+        \toprule
+        \textbf{Requirement} & \textbf{Measured Result} & \textbf{Passed} \\
+        \midrule
+        Recognize $\geq 2$ classes simultaneously & 2 classes (keyboard/laptop) & Yes \\
+        Accuracy $\geq 80\%$ on 20 test objects & 87.0\% (20/23) & Yes \\
+        Jetson real-time detection $\geq 5$ FPS & (fill in after Jetson run) & TBD \\
+        Save test results and error cases & runs/test/ & Yes \\
+        Publish recognition results via ROS2 & /detections & Yes \\
+        \bottomrule
+    \end{tabular}
+    \caption{Acceptance requirements and results}
+\end{table}
+
+% ============================ 8. Code =================================
+\section{Code Description}
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \texttt{train.py}: training script;
+    \item \texttt{detector.py}: shared detector that auto-selects TensorRT/ONNX/PyTorch backend;
+    \item \texttt{detect.py}: real-time detection (shows class, box, confidence, FPS);
+    \item \texttt{test.py}: test evaluation (accuracy + error cases);
+    \item \texttt{ros2\_detect.py}: ROS2 node (publishes Detection2DArray).
+\end{enumerate}
+
+Key code example (inference core):
+\begin{lstlisting}[language=Python, caption={Detection inference}]
+from ultralytics import YOLO
+
+model = YOLO("best.engine")   # TensorRT engine
+results = model(frame, conf=0.25, verbose=False)
+for box in results[0].boxes:
+    cls = int(box.cls[0])
+    conf = float(box.conf[0])
+    xyxy = box.xyxy[0].tolist()
+    print(model.names[cls], conf, xyxy)
+\end{lstlisting}
+
+% ============================ 9. Run instructions =====================
+\section{Run Instructions}
+\begin{lstlisting}[language=bash, caption={Full workflow}]
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Train
+python train.py
+
+# 3. Export TensorRT on the Jetson
+yolo export model=best.pt format=engine imgsz=640
+
+# 4. Real-time detection
+python detect.py
+
+# 5. Publish via ROS2
+source /opt/ros/humble/setup.bash
+python3 ros2_detect.py
+
+# 6. Test evaluation
+python test.py
+\end{lstlisting}
+
+% ============================ 10. Conclusion ==========================
+\section{Conclusion}
+This experiment completed a desktop object detection task: two classes
+(keyboard and laptop) were selected, a dataset was collected and annotated
+independently (410 training images, 31 validation images, 23 test objects),
+and a detection model was trained based on YOLOv8n, reaching a validation
+mAP50 of 0.920. The test accuracy was 87.0\% (20/23), satisfying the
+$\geq 80\%$ acceptance requirement. A ROS2 node was also implemented to
+publish detection results as vision\_msgs/Detection2DArray, including
+adaptation to the BoundingBox2D.center type differences across
+vision\_msgs versions. The main shortcoming is that a few extreme viewpoints
+(a keyboard seen edge-on, a laptop close-up) caused misses, reflecting
+insufficient viewpoint and scale coverage in the training data; this can be
+further improved by adding more such samples.
+
+% ============================ Appendix ================================
+\section{Appendix: GitHub Commit History}
+\begin{itemize}[leftmargin=2em]
+    \item Repository: \url{https://github.com/your-username/robot-object-detection}
+    \item The commit history screenshot is shown below (step-by-step commits are required, not a single bulk commit):
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \img[width=0.9\linewidth]{commit_history.png}
+    \caption{Git commit history screenshot (replace with your own)}
+\end{figure}
+
+\end{document}
