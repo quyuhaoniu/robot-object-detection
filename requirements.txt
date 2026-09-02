@@ -1,0 +1,8 @@
+# 训练 + 推理共用（PC 和 Jetson 都装这些）
+ultralytics>=8.0.0
+opencv-python>=4.5.0
+pyyaml>=6.0
+
+# ROS2 相关（Jetson 上用系统包安装，不要用 pip）:
+#   sudo apt install ros-humble-vision-msgs
+#   rclpy / std_msgs / geometry_msgs 由 ROS2 发行版自带

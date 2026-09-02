@@ -216,3 +216,18 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ===== Project-specific ignores (large / generated artifacts) =====
+# Training data and model outputs are too large for git
+datasets/
+runs/
+
+# Videos and model weights
+*.webm
+*.mp4
+*.pt
+*.engine
+*.onnx
+
+# Backups
+*.bak
